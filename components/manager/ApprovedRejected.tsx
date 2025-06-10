@@ -33,7 +33,7 @@ interface Request {
   expense_date: string | null;
   category: string | null;
   user_id: string;
-  users: User[]; // Array of users (matches Supabase response)
+  users: User[];
   description?: string;
   receipt_url?: string;
   approval_comments?: string;
@@ -61,7 +61,7 @@ export function ApprovedRejected({ requests }: RequestsTableProps) {
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      const employee = req.users?.[0]?.name ?? "Unknown";
+      const employee = req.users?.[0]?.name?.toLowerCase() ?? "unknown";
       const category = req.category?.toLowerCase() || "";
       const amount = req.amount?.toString() || "";
       const expenseDate = req.expense_date
@@ -72,7 +72,6 @@ export function ApprovedRejected({ requests }: RequestsTableProps) {
         : "";
       const query = search.toLowerCase();
 
-      // Match search query
       const matchesSearch =
         employee.includes(query) ||
         category.includes(query) ||
@@ -80,7 +79,6 @@ export function ApprovedRejected({ requests }: RequestsTableProps) {
         expenseDate.includes(query) ||
         created_at.includes(query);
 
-      // Match category filter ("all" means no filter)
       const matchesCategory =
         selectedCategory === "all" || req.category === selectedCategory;
 
@@ -90,7 +88,6 @@ export function ApprovedRejected({ requests }: RequestsTableProps) {
 
   return (
     <div className="rounded-md border">
-      {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 p-4 border-b justify-between">
         <Input
           placeholder="Search..."

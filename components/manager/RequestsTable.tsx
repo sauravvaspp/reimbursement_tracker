@@ -32,7 +32,7 @@ interface Request {
   expense_date: string | null;
   category: string | null;
   user_id: string;
-  users: User[];// Array of  users (matches Supabase response)
+  users: User[];
   description?: string;
   receipt_url?: string;
   approval_comments?: string;
@@ -60,7 +60,7 @@ export function RequestsTable({ requests }: RequestsTableProps) {
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      const employee = req.users?.[0]?.name ?? "Unknown";
+      const employee = req.users?.[0]?.name?.toLowerCase() ?? "unknown";
       const category = req.category?.toLowerCase() || "";
       const amount = req.amount?.toString() || "";
       const expenseDate = req.expense_date
@@ -72,7 +72,7 @@ export function RequestsTable({ requests }: RequestsTableProps) {
       const query = search.toLowerCase();
 
       const matchesSearch =
-        employee.includes(query) ||
+      employee.includes(query) ||
         category.includes(query) ||
         amount.includes(query) ||
         expenseDate.includes(query) ||

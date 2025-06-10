@@ -90,6 +90,7 @@ const RequestDetailDialog: React.FC<Props> = ({
   const [loadingBudget, setLoadingBudget] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderPath = `${request.user_id}/reimbursement_requests/${request.id}`;
+  
 
   const fetchBudget = async () => {
     if (!request.user_id) return;
@@ -107,14 +108,13 @@ const RequestDetailDialog: React.FC<Props> = ({
   
       const totalBudget = parseFloat(userData.reimbursement_budget) || 0;
   
-      // Get the current year
       const currentYear = new Date().getFullYear();
       const startOfYear = `${currentYear}-01-01`;
       const endOfYear = `${currentYear}-12-31`;
   
       const { data: requestsData, error: requestsError } = await supabase
         .from('reimbursement_requests')
-        .select('amount, status, expense_date')
+        .select('amount, status, expense_date, id')
         .eq('user_id', request.user_id)
         .in('status', ['Pending', 'Approved'])
         .gte('expense_date', startOfYear)
@@ -122,8 +122,10 @@ const RequestDetailDialog: React.FC<Props> = ({
   
       if (requestsError) throw requestsError;
   
-      const usedAmount =
-        requestsData?.reduce((sum, req) => sum + (parseFloat(req.amount) || 0), 0) || 0;
+      const usedAmount = requestsData?.reduce((sum, req) => {
+        if (req.id === request.id && request.status === 'Pending') return sum;
+        return sum + (parseFloat(req.amount) || 0);
+      }, 0) || 0;
   
       setAvailableBudget(totalBudget - usedAmount);
     } catch (error) {
@@ -138,17 +140,20 @@ const RequestDetailDialog: React.FC<Props> = ({
   const expenseSchema = z.object({
     description: z.string().min(3, 'Description must be at least 3 characters'),
     amount: z
-      .string()
-      .refine((val) => !isNaN(Number(val)) && Number(val) >= 0.01, {
-        message: 'Amount must be at least ₹0.01',
-      })
-      .refine(
-        (val) =>
-          availableBudget === null || parseFloat(val) <= availableBudget,
-        {
-          message: 'Amount exceeds available budget',
-        }
-      ),
+    .string()
+    .refine((val) => !isNaN(Number(val)) && Number(val) >= 0.01, {
+      message: 'Amount must be at least ₹0.01',
+    })
+    .refine(
+      (val) => {
+        if (availableBudget === null) return true;
+        const currentAmount = parseFloat(val);
+        return currentAmount <= availableBudget;
+      },
+      {
+        message: 'Amount exceeds available budget',
+      }
+    ),
     category: z.string().min(1, 'Please select a category'),
     expense_date: z.string().min(1, 'Expense date is required'),
     merchant: z.string().min(2, 'Merchant name must be at least 2 characters'),
@@ -175,7 +180,13 @@ const RequestDetailDialog: React.FC<Props> = ({
       note: request.note || '',
     },
   });
+  const currentAmount = watch('amount');
 
+  useEffect(() => {
+    if (availableBudget !== null && currentAmount) {
+      setValue('amount', currentAmount, { shouldValidate: true });
+    }
+  }, [currentAmount, availableBudget, setValue]);
   const fetchFiles = async () => {
     if (!request?.id || !request?.user_id) return;
 
@@ -318,7 +329,7 @@ const RequestDetailDialog: React.FC<Props> = ({
                     )}
                   </Label>
                   <Input type="number" step="0.01" disabled={!isEditable} {...register('amount')} />
-                  {errors.amount && (
+                  {isEditable && errors.amount && (
                     <p className="text-red-600 text-sm mt-1">{errors.amount.message}</p>
                   )}
                 </div>
