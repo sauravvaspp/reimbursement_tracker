@@ -25,9 +25,9 @@ export default function Page() {
           <h1 className="text-4xl font-bold leading-tight">
             Reimbursement Tracker
           </h1>
-          <p className="text-lg text-white/80">
+          {/* <p className="text-lg text-white/80">
             Simplify your team's expense tracking and reimbursement process.
-          </p>
+          </p> */}
           <p className="text-sm text-white/60">
             Streamlined. Transparent. Hassle-free.
           </p>
