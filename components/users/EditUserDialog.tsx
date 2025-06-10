@@ -87,26 +87,7 @@ const createUserSchema = (managers: any[]) =>
       }
     }
   });
-  const handleRoleChange = (value: string) => {
-    setForm(prev => ({
-      ...prev,
-      role: value,
-      // Clear budget for Admin/Finance; keep existing otherwise
-      reimbursement_budget:
-        value === "Admin" || value === "Finance" ? 0 : prev.reimbursement_budget,
-      // Optionally clear managerID if Admin/Finance (not required, but helps with UX)
-      managerID: value === "Admin" || value === "Finance" ? null : prev.managerID,
-    }));
-  
-    // Clear related validation errors if role changes to Admin or Finance
-    if ((value === "Admin" || value === "Finance")) {
-      setErrors(prev => ({
-        ...prev,
-        managerID: '',
-        reimbursement_budget: '',
-      }));
-    }
-  };
+ 
     
 
 
