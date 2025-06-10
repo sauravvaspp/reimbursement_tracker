@@ -155,7 +155,6 @@ const totalRejectedAmount =
         <Card className="flex-1 min-w-[250px]">
           <CardHeader>
             <CardTitle>Approved Amount</CardTitle>
-            <CardDescription>Total approved in {currentYear}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">₹{totalApprovedAmount.toFixed(2)}</p>
@@ -167,7 +166,6 @@ const totalRejectedAmount =
 <Card className="flex-1 min-w-[250px]">
   <CardHeader>
     <CardTitle>Rejected Amount</CardTitle>
-    <CardDescription>Total rejected in {currentYear}</CardDescription>
   </CardHeader>
   <CardContent>
     <p className="text-2xl font-bold">₹{totalRejectedAmount.toFixed(2)}</p>
