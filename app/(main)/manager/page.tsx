@@ -102,6 +102,23 @@ export default async function ManagerDashboard() {
 if (approvedRejectedError) {
   return <p className="p-6 text-red-600">Error loading approved/rejected requests: {approvedRejectedError.message}</p>;
 }
+const { data: rejectedRequests, error: rejectedError } = await supabase
+  .from("reimbursement_requests")
+  .select("amount")
+  .eq("approver", managerId)
+  .eq("status", "Rejected")
+  .gte("expense_date", yearStart)
+  .lte("expense_date", yearEnd);
+
+if (rejectedError) {
+  return <p className="p-6 text-red-600">Error loading rejected requests: {rejectedError.message}</p>;
+}
+
+const totalRejectedAmount =
+  rejectedRequests
+    ?.map((r) => parseFloat(r.amount))
+    .filter((amt) => !isNaN(amt))
+    .reduce((sum, amt) => sum + amt, 0) ?? 0;
 
   return (
     <div className="p-6">
@@ -147,6 +164,18 @@ if (approvedRejectedError) {
             Approved by you
           </CardDescription>
         </Card>
+<Card className="flex-1 min-w-[250px]">
+  <CardHeader>
+    <CardTitle>Rejected Amount</CardTitle>
+    <CardDescription>Total rejected in {currentYear}</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="text-2xl font-bold">₹{totalRejectedAmount.toFixed(2)}</p>
+  </CardContent>
+  <CardDescription className="px-6 pb-4 text-gray-500">
+    Rejected by you
+  </CardDescription>
+</Card>
       </div>
 
       <div className="mt-8">
@@ -179,7 +208,11 @@ if (approvedRejectedError) {
   requests={
     pendingRequestsWithDetails?.map(req => ({
       ...req,
-      users: req.users?.length ? req.users : [{ name: "Unknown" }] // Keep users as array
+      users: Array.isArray(req.users) 
+        ? req.users 
+        : req.users 
+          ? [req.users] 
+          : [{ name: "Unknown" }] 
     })) || []
   }
 />
@@ -200,10 +233,14 @@ if (approvedRejectedError) {
         <CardContent>
         <ApprovedRejected
   requests={
-    (approvedRejectedRequests?.map(req => ({
+    approvedRejectedRequests?.map(req => ({
       ...req,
-      users: req.users?.length ? req.users : [{ name: "Unknown" }] // ensure users is array
-    }))) || []
+      users: Array.isArray(req.users) 
+        ? req.users 
+        : req.users 
+          ? [req.users]  
+          : [{ name: "Unknown" }] 
+    })) || []
   }
 />
         </CardContent>
