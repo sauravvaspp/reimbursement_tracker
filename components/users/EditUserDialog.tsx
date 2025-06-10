@@ -62,6 +62,7 @@ const createUserSchema = (managers: any[]) =>
         path: ["managerID"]
       });
     }
+  
     if (data.managerID && !managers.some(m => m.id === data.managerID)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -69,7 +70,44 @@ const createUserSchema = (managers: any[]) =>
         path: ["managerID"]
       });
     }
+  
+    if (data.role !== "Admin" && data.role !== "Finance") {
+      if (typeof data.reimbursement_budget !== "number" || isNaN(data.reimbursement_budget)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Reimbursement budget is required",
+          path: ["reimbursement_budget"],
+        });
+      } else if (data.reimbursement_budget < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Budget cannot be negative",
+          path: ["reimbursement_budget"],
+        });
+      }
+    }
   });
+  const handleRoleChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      role: value,
+      // Clear budget for Admin/Finance; keep existing otherwise
+      reimbursement_budget:
+        value === "Admin" || value === "Finance" ? 0 : prev.reimbursement_budget,
+      // Optionally clear managerID if Admin/Finance (not required, but helps with UX)
+      managerID: value === "Admin" || value === "Finance" ? null : prev.managerID,
+    }));
+  
+    // Clear related validation errors if role changes to Admin or Finance
+    if ((value === "Admin" || value === "Finance")) {
+      setErrors(prev => ({
+        ...prev,
+        managerID: '',
+        reimbursement_budget: '',
+      }));
+    }
+  };
+    
 
 
 export function EditUserDialog({ user, managers, isOpen, setIsOpen, onSave }: EditUserDialogProps) {
@@ -106,24 +144,33 @@ export function EditUserDialog({ user, managers, isOpen, setIsOpen, onSave }: Ed
       ...prev,
       [name]: name === 'reimbursement_budget' ? Number(value) : value
     }));
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const handleRoleChange = (value: string) => {
-    setForm(prev => ({ ...prev, role: value }));
-    // Clear managerID error when role changes
-    if (errors.managerID && value === 'Admin') {
-      setErrors(prev => ({ ...prev, managerID: '' }));
+    setForm(prev => ({
+      ...prev,
+      role: value,
+      reimbursement_budget:
+        value === "Admin" || value === "Finance" ? 0 : prev.reimbursement_budget,
+      managerID: value === "Admin" || value === "Finance" ? null : prev.managerID,
+    }));
+  
+    if ((value === "Admin" || value === "Finance")) {
+      setErrors(prev => ({
+        ...prev,
+        managerID: '',
+        reimbursement_budget: '',
+      }));
     }
   };
+  
 
   const handleManagerChange = (value: string) => {
     const managerID = value === "null" ? null : value;
     setForm(prev => ({ ...prev, managerID }));
-    // Clear error when manager is selected
     if (errors.managerID) {
       setErrors(prev => ({ ...prev, managerID: '' }));
     }
@@ -132,7 +179,6 @@ export function EditUserDialog({ user, managers, isOpen, setIsOpen, onSave }: Ed
   const handleSubmit = async () => {
     try {
       const userSchema = createUserSchema(managers);
-      // Validate the form data
       userSchema.parse(form);
       setLoading(true);
       await onSave(form);
@@ -206,17 +252,16 @@ export function EditUserDialog({ user, managers, isOpen, setIsOpen, onSave }: Ed
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
             <Select value={form.role} onValueChange={handleRoleChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Manager">Manager</SelectItem>
-                <SelectItem value="Employee">Employee</SelectItem>
-                {/* <SelectItem value="HR">HR</SelectItem> */}
-                <SelectItem value="Finance">Finance</SelectItem>
-              </SelectContent>
-            </Select>
+  <SelectTrigger>
+    <SelectValue placeholder="Select role" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="Admin">Admin</SelectItem>
+    <SelectItem value="Manager">Manager</SelectItem>
+    <SelectItem value="Employee">Employee</SelectItem>
+    <SelectItem value="Finance">Finance</SelectItem>
+  </SelectContent>
+</Select>
             {errors.role && <p className="text-sm text-red-500">{errors.role}</p>}
           </div>
           {form.role && form.role !== "Admin" && form.role !== "Finance" && (
@@ -246,26 +291,29 @@ export function EditUserDialog({ user, managers, isOpen, setIsOpen, onSave }: Ed
             </div>
           )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="reimbursement_budget">Reimbursement Budget</Label>
-          <Input
-            id="reimbursement_budget"
-            name="reimbursement_budget"
-            type="number"
-            value={form.reimbursement_budget}
-            onChange={(e) => {
-              handleChange({
-                target: {
-                  name: 'reimbursement_budget',
-                  value: e.target.value
-                }
-              } as React.ChangeEvent<HTMLInputElement>);
-            }}
-          />
-          {errors.reimbursement_budget && (
-            <p className="text-sm text-red-500">{errors.reimbursement_budget}</p>
-          )}
-        </div>
+        {form.role && form.role !== "Admin" && form.role !== "Finance" && (
+  <div className="space-y-2">
+    <Label htmlFor="reimbursement_budget">Reimbursement Budget</Label>
+    <Input
+      id="reimbursement_budget"
+      name="reimbursement_budget"
+      type="number"
+      value={form.reimbursement_budget}
+      onChange={(e) => {
+        handleChange({
+          target: {
+            name: 'reimbursement_budget',
+            value: e.target.value
+          }
+        } as React.ChangeEvent<HTMLInputElement>);
+      }}
+    />
+    {errors.reimbursement_budget && (
+      <p className="text-sm text-red-500">{errors.reimbursement_budget}</p>
+    )}
+  </div>
+)}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel

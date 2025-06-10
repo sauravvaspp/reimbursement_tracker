@@ -115,12 +115,28 @@ const userSchema = (filteredUsers: any[]) =>
     reimbursement_budget: z.number().min(0, "Budget cannot be negative"),
     managerID: z.string().optional()
   }).superRefine((data, ctx) => {
-    if (data.role !== 'Admin' && data.role !== 'Finance' && !data.managerID) {
+    if (data.role !== "Admin" && data.role !== "Finance" && !data.managerID) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Manager is required for this role",
-        path: ["managerID"]
+        path: ["managerID"],
       });
+    }
+
+    if (data.role !== "Admin" && data.role !== "Finance") {
+      if (typeof data.reimbursement_budget !== "number" || isNaN(data.reimbursement_budget)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Reimbursement budget is required",
+          path: ["reimbursement_budget"],
+        });
+      } else if (data.reimbursement_budget < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Budget cannot be negative",
+          path: ["reimbursement_budget"],
+        });
+      }
     }
   });
 
@@ -349,21 +365,27 @@ export default function AddUserDialog({
 
 
 
-            <div>
-              <Label htmlFor="reimbursement_budget" className="block text-sm font-medium text-gray-700 mb-1">Reimbursement Budget</Label>
-              <Input
-                id="reimbursement_budget"
-                {...register('reimbursement_budget', { valueAsNumber: true })}
-                name="reimbursement_budget"
-                type="number"
-                onChange={(e) => {
-                  handleChange(e);
-                  setValue('reimbursement_budget', Number(e.target.value), { shouldValidate: true });
-                }}
-                placeholder="Reimbursement Budget"
-              />
-              {errors.reimbursement_budget && <p className="text-red-500 text-sm mt-1">{errors.reimbursement_budget.message}</p>}
-            </div>
+{form.role && form.role !== "Admin" && form.role !== "Finance" && (
+  <div>
+    <Label htmlFor="reimbursement_budget" className="block text-sm font-medium text-gray-700 mb-1">Reimbursement Budget</Label>
+    <Input
+      id="reimbursement_budget"
+      {...register('reimbursement_budget', { valueAsNumber: true })}
+      name="reimbursement_budget"
+      type="number"
+      onChange={(e) => {
+        handleChange(e);
+        setValue('reimbursement_budget', Number(e.target.value), { shouldValidate: true });
+      }}
+      placeholder="Reimbursement Budget"
+    />
+    {errors.reimbursement_budget && (
+      <p className="text-red-500 text-sm mt-1">
+        {errors.reimbursement_budget.message}
+      </p>
+    )}
+  </div>
+)}
 
             <DialogFooter className="mt-4">
               
