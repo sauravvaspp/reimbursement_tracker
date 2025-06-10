@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 //   subsets: ["latin"],
 // });
 
-export default async function RootLayout({
+export default async function Root({
   children,
 }: Readonly<{
   children: React.ReactNode;

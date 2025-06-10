@@ -6,7 +6,7 @@ import ManagerReports from "@/components/analytics_dashboard/ManagerReports";
 
 
 
-export default async function monthly_report() {
+export default async function Analytics_dashboard() {
   const supabase = await createClient();
 
   const {

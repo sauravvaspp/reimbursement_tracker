@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export default async function Instruments() {
+export default async function AccountSetting() {
   const supabase = await createClient();
 
   const {
