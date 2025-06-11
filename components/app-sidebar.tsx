@@ -58,7 +58,13 @@ const items = [
     url: "/monthly_report",
     icon: FileBarChart,
   },
+  {
+    title: "All Requests",
+    url: "/all_request",
+    icon: ListChecks,
+  },
 ]
+
 
 export function AppSidebar({ role }: { role: string | null }) {
   const router = useRouter()
@@ -92,18 +98,21 @@ export function AppSidebar({ role }: { role: string | null }) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items
-                .filter((item) => {
-                  const hiddenForFinance = ["Approvals", "My Requests", "Submit Expenses"];
-                  const hiddenForAdmin = ["My Requests", "Submit Expenses"];
-                  const hiddenForEmployee = ["Approvals"];
+            {items
+  .filter((item) => {
+    const hiddenForFinance = ["Approvals", "My Requests", "Submit Expenses"];
+    const hiddenForAdmin = ["My Requests", "Submit Expenses"];
+    const hiddenForEmployee = ["Approvals", "All Requests"]; 
+    const hiddenForManager = ["All Requests"];
 
-                  if (role === "Finance" && hiddenForFinance.includes(item.title)) return false;
-                  if (role === "Admin" && hiddenForAdmin.includes(item.title)) return false;
-                  if (role === "Employee" && hiddenForEmployee.includes(item.title)) return false;
+    if (role === "Finance" && hiddenForFinance.includes(item.title)) return false;
+    if (role === "Admin" && hiddenForAdmin.includes(item.title)) return false;
+    if (role === "Employee" && hiddenForEmployee.includes(item.title)) return false;
+    if (role === "Manager" && hiddenForManager.includes(item.title)) return false;
 
-                  return true;
-                })
+    return true;
+  })
+
                 .map((item) => (
 
                   <SidebarMenuItem key={item.title}>

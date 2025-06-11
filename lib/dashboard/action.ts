@@ -156,7 +156,6 @@ export const fetchUsersForAdmin = async () => {
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("id, name, email, role, reimbursement_budget")
-      .not("role", "in", '("Admin","Finance")');
   
     if (usersError) {
       throw new Error(usersError.message);

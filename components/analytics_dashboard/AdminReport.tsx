@@ -153,10 +153,10 @@ export default function AdminReports() {
 
   const expenseByCategory = categories.map((cat) => {
     return searchFilteredRequests
-      .filter((r) => r.category === cat)
+      .filter((r) => r.category === cat && r.status === "Approved") // Add status filter
       .reduce((sum, r) => sum + parseFloat(r.amount ?? "0"), 0);
   });
-
+  
   const requestsCountByStatus = statuses.map(
     (status) =>
       searchFilteredRequests.filter((r) => r.status === status).length
@@ -181,7 +181,7 @@ export default function AdminReports() {
     labels: categories,
     datasets: [
       {
-        label: "Total Expense Amount",
+        label: "Total Approved Expense Amount",
         data: expenseByCategory,
         backgroundColor: "rgba(59, 130, 246, 0.7)",
       },
@@ -232,40 +232,40 @@ export default function AdminReports() {
     },
   };
   
-  const expenses = new Array(12).fill(0);
-  const reimbursements = new Array(12).fill(0);
-  searchFilteredRequests.forEach((r) => {
-    const monthIndex = new Date(r.expense_date).getMonth();
-    if (r.status === "Approved") {
-      reimbursements[monthIndex] += parseFloat(r.amount ?? "0");
-    } else {
-      expenses[monthIndex] += parseFloat(r.amount ?? "0");
-    }
-  });
-  const monthlyData = {
-    labels: months,
-    datasets: [
-      {
-        label: "Expenses",
-        data: expenses,
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderColor: "rgba(255, 99, 132, 1)",
-        borderWidth: 1,
-      },
-      {
-        label: "Reimbursements",
-        data: reimbursements,
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1,
-      },
-    ],
-  };
+const expenses = new Array(12).fill(0);
+const reimbursements = new Array(12).fill(0);
+searchFilteredRequests.forEach((r) => {
+  const monthIndex = new Date(r.expense_date).getMonth();
+  if (r.status === "Approved") {
+    reimbursements[monthIndex] += parseFloat(r.amount ?? "0");
+  }
+  expenses[monthIndex] += parseFloat(r.amount ?? "0");
+});
+
+const monthlyData = {
+  labels: months,
+  datasets: [
+    {
+      label: "Expenses (All Requests)",
+      data: expenses,
+      backgroundColor: "rgba(255, 99, 132, 0.2)",
+      borderColor: "rgba(255, 99, 132, 1)",
+      borderWidth: 1,
+    },
+    {
+      label: "Approved Reimbursements",
+      data: reimbursements,
+      backgroundColor: "rgba(54, 162, 235, 0.2)",
+      borderColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 1,
+    },
+  ],
+};
   const expenseByCategoryPieData = {
     labels: categories,
     datasets: [
       {
-        label: "Expenses by Category",
+        label: "Approved Expenses by Category",
         data: expenseByCategory,
         backgroundColor: [
           "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#6366f1", "#ec4899", "#14b8a6", "#8b5cf6"
@@ -339,7 +339,7 @@ export default function AdminReports() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Expense Amount by Category</CardTitle>
+                <CardTitle>Approved Amount by Category</CardTitle>
               </CardHeader>
               <CardContent>
                 <Bar
@@ -348,9 +348,9 @@ export default function AdminReports() {
                     plugins: {
                       ...chartOptions.plugins,
                       title: {
-                        ...chartOptions.plugins.title,
-                        text: "Expense Amount by Category",
-                      },
+  ...chartOptions.plugins.title,
+  text: "Approved Expense Amount by Category",
+},
                     },
                   }}
                   data={expenseByCategoryData}
@@ -406,7 +406,7 @@ export default function AdminReports() {
 
   <Card className="min-h-[400px]">
   <CardHeader>
-    <CardTitle>Expenses by Category</CardTitle>
+    <CardTitle>Approved by Category</CardTitle>
   </CardHeader>
   <CardContent className="h-full">
     <div className="relative h-[300px]">
@@ -438,47 +438,48 @@ export default function AdminReports() {
   </CardHeader>
 
   <CardContent>
-    {currentMonthRequests.length > 0 ? (
-      <div className="flex flex-col gap-4">
-        {currentMonthRequests.map((req, idx) => (
-          <Card
-            key={idx}
-            className="w-full p-4 shadow-md border rounded-md flex justify-between items-center"
-          >
-            <div className="flex flex-col">
-              <span className="text-lg font-semibold text-gray-800">
-                {userMap[req.user_id] || "Unknown User"}
-              </span>
-              <span className="text-sm text-gray-800 mt-1">{req.category}</span>
-              <span className="text-sm text-gray-500 mt-1">
-                {new Date(req.expense_date).toLocaleDateString("en-IN")}
-              </span>
-            </div>
+  {currentMonthRequests.length > 0 ? (
+    <div className="flex flex-col gap-4">
+      {currentMonthRequests.slice(0, 5).map((req, idx) => (
+        <Card
+          key={idx}
+          className="w-full p-4 shadow-md border rounded-md flex justify-between items-center"
+        >
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold text-gray-800">
+              {userMap[req.user_id] || "Unknown User"}
+            </span>
+            <span className="text-sm text-gray-800 mt-1">{req.category}</span>
+            <span className="text-sm text-gray-500 mt-1">
+              {new Date(req.expense_date).toLocaleDateString("en-IN")}
+            </span>
+          </div>
 
-            <div className="flex items-center space-x-4">
-              <span className="text-lg font-semibold text-gray-900">
-                ₹{parseFloat(req.amount).toFixed(2)}
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  statusColors[req.status] ?? "bg-gray-100 text-gray-700"
-                }`}
-              >
-                {req.status}
-              </span>
-            </div>
-          </Card>
-        ))}
-      </div>
-    ) : (
-      <div className="text-center text-sm text-gray-500 mt-4">
-        No reimbursement requests found for this month.
-      </div>
-    )}
-  </CardContent>
+          <div className="flex items-center space-x-4">
+            <span className="text-lg font-semibold text-gray-900">
+              ₹{parseFloat(req.amount).toFixed(2)}
+            </span>
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                statusColors[req.status] ?? "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {req.status}
+            </span>
+          </div>
+        </Card>
+      ))}
+    </div>
+  ) : (
+    <div className="text-center text-sm text-gray-500 mt-4">
+      No reimbursement requests found for this month.
+    </div>
+  )}
+</CardContent>
+
 
   <div className="flex justify-center p-4 border-t">
-    <Button onClick={() => router.push("/monthly_report")} variant="outline">
+    <Button onClick={() => router.push("/all_request")} variant="outline">
       View all Requests
     </Button>
   </div>
